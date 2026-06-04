@@ -20,6 +20,10 @@ export default function CadastroPage() {
   const [role, setRole] = useState<Role | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState< File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [diplomaFile, setDiplomaFile] = useState<File | null>(null);
+  const [crmvFile, setCrmvFile] = useState<File | null>(null);
 
   // Common fields
   const [name, setName] = useState('');
@@ -44,6 +48,20 @@ export default function CadastroPage() {
     setSelectedServices(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   }
 
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>){
+    const file = e.currentTarget.files?.[0]
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  async function uploadFile(file: File, type: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    await fetch('/api/upload', {method: 'POST', body: formData });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -61,8 +79,14 @@ export default function CadastroPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Erro ao criar conta'); return; }
+
+      if (avatarFile) await uploadFile(avatarFile, 'avatar');
+      if (diplomaFile) await uploadFile(diplomaFile, 'diploma');
+      if (crmvFile) await uploadFile(crmvFile, 'crmv_file');
+
       if (role === 'tutor') router.push('/tutor/dashboard');
-      else router.push('/prestador/dashboard');
+      else router.push('/prestador/dashboard')
+
     } catch {
       setError('Erro de conexão.');
     } finally {
@@ -221,6 +245,38 @@ export default function CadastroPage() {
               </div>
             </div>
           )}
+          {/* Foto de perfil - para todos */}
+<div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '1rem' }}>
+  <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '1rem', color: 'var(--accent)' }}>📷 Foto de Perfil</h3>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    {avatarPreview && (
+      <img src={avatarPreview as string} alt="Preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent)' }} />
+    )}
+    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange}
+      style={{ fontSize: '0.85rem' }} />
+  </div>
+</div>
+
+{/* Documentos - só para veterinário */}
+{role === 'veterinario' && (
+  <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '1rem' }}>
+    <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '1rem', color: 'var(--accent)' }}>📄 Documentos</h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div>
+        <label className="label">Diploma de Medicina Veterinária (PDF, JPG ou PNG)</label>
+        <input type="file" accept=".pdf,image/jpeg,image/png"
+          onChange={e => setDiplomaFile(e.target.files?.[0] || null)}
+          style={{ fontSize: '0.85rem' }} />
+      </div>
+      <div>
+        <label className="label">Carteirinha CRMV (PDF, JPG ou PNG)</label>
+        <input type="file" accept=".pdf,image/jpeg,image/png"
+          onChange={e => setCrmvFile(e.target.files?.[0] || null)}
+          style={{ fontSize: '0.85rem' }} />
+      </div>
+    </div>
+  </div>
+)}
 
           <button className="btn-primary" type="submit" disabled={loading} style={{ width: '100%' }}>
             {loading ? 'Criando conta...' : 'Criar Conta'}

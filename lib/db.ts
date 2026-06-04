@@ -41,6 +41,8 @@ export async function initDB() {
       rating REAL DEFAULT 0,
       total_reviews INTEGER DEFAULT 0,
       total_appointments INTEGER DEFAULT 0,
+      diploma_file TEXT,
+      crmv_file TEXT,
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
 

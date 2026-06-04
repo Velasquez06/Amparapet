@@ -7,7 +7,7 @@ import { PawPrint, ArrowLeft, CheckCircle } from 'lucide-react';
 interface Professional { id: number; name: string; role: string; services: string[]; specialties: string[]; }
 interface Pet { id: number; name: string; species: string; breed: string; }
 
-const TIMES = ['08:00','09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
+const TIMES = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
 function AgendarForm() {
   const router = useRouter();
@@ -27,6 +27,7 @@ function AgendarForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -41,6 +42,16 @@ function AgendarForm() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    if (!selectedProf || !date) { setBookedTimes([]); return; }
+    async function fetchBooked() {
+      const res = await fetch(`/api/appointments/booked?professional_id=${selectedProf}&date=${date}`);
+      const data = await res.json();
+      setBookedTimes(data.times || []);
+    }
+    fetchBooked();
+  }, [selectedProf, date]);
 
   const selectedProfObj = professionals.find(p => String(p.id) === selectedProf);
   const availableServices = selectedProfObj
@@ -100,18 +111,21 @@ function AgendarForm() {
         <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Preencha os dados para solicitar um agendamento</p>
 
         {error && (
-          <div style={{ background: '#fde8e8', border: '1px solid #f5c6c6', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem', color: '#c0392b', fontSize: '0.85rem' }}>{error}</div>
+          <div style={{ background: '#fde8e8', border: '1px solid #f5c6c6', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem', color: '#c0392b', fontSize: '0.85rem' }}>
+            {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Profissional */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', color: 'var(--accent)' }}>👨‍⚕️ Profissional</h3>
             <label className="label">Selecione o profissional *</label>
             <select className="input" value={selectedProf} onChange={e => { setSelectedProf(e.target.value); setServiceType(''); }} required>
               <option value="">Escolha um profissional</option>
               {professionals.map(p => (
-                <option key={p.id} value={p.id}>{p.name} — {p.role === 'veterinario' ? 'Veterinário' : 'Cuidador'}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name} — {p.role === 'veterinario' ? 'Veterinário' : 'Cuidador'}
+                </option>
               ))}
             </select>
             {availableServices.length > 0 && (
@@ -119,8 +133,12 @@ function AgendarForm() {
                 <label className="label">Tipo de serviço *</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                   {availableServices.map(s => (
-                    <button key={s} type="button" onClick={() => setServiceType(s)}
-                      style={{ padding: '0.4rem 0.85rem', borderRadius: '999px', border: '1.5px solid', borderColor: serviceType === s ? 'var(--accent)' : 'var(--border)', background: serviceType === s ? 'var(--accent)' : 'white', color: serviceType === s ? 'white' : 'var(--text)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setServiceType(s)}
+                      style={{ padding: '0.4rem 0.85rem', borderRadius: '999px', border: '1.5px solid', borderColor: serviceType === s ? 'var(--accent)' : 'var(--border)', background: serviceType === s ? 'var(--accent)' : 'white', color: serviceType === s ? 'white' : 'var(--text)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                    >
                       {s}
                     </button>
                   ))}
@@ -129,7 +147,6 @@ function AgendarForm() {
             )}
           </div>
 
-          {/* Pet */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', color: 'var(--accent)' }}>🐾 Seu Pet</h3>
             {pets.length === 0 ? (
@@ -140,8 +157,12 @@ function AgendarForm() {
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {pets.map(p => (
-                  <button key={p.id} type="button" onClick={() => setSelectedPet(String(p.id))}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.9rem', borderRadius: '10px', border: '1.5px solid', borderColor: selectedPet === String(p.id) ? 'var(--accent)' : 'var(--border)', background: selectedPet === String(p.id) ? '#f0f9f6' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.15s' }}>
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setSelectedPet(String(p.id))}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.9rem', borderRadius: '10px', border: '1.5px solid', borderColor: selectedPet === String(p.id) ? 'var(--accent)' : 'var(--border)', background: selectedPet === String(p.id) ? '#f0f9f6' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.15s' }}
+                  >
                     <span>{p.species === 'Gato' ? '🐱' : '🐶'}</span> {p.name}
                   </button>
                 ))}
@@ -149,48 +170,78 @@ function AgendarForm() {
             )}
           </div>
 
-          {/* Descrição */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', color: 'var(--accent)' }}>📝 Detalhes</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <label className="label">Descreva o serviço desejado</label>
-                <textarea className="input" rows={2} placeholder="Ex: Passeio de 30 minutos pelo parque..." value={description} onChange={e => setDescription(e.target.value)} style={{ resize: 'vertical' }} />
+                <textarea
+                  className="input"
+                  rows={2}
+                  placeholder="Ex: Passeio de 30 minutos pelo parque..."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  style={{ resize: 'vertical' }}
+                />
               </div>
               <div>
                 <label className="label">Observações adicionais</label>
-                <textarea className="input" rows={2} placeholder="Ex: Meu pet é tímido com estranhos, avisar ao chegar..." value={notes} onChange={e => setNotes(e.target.value)} style={{ resize: 'vertical' }} />
+                <textarea
+                  className="input"
+                  rows={2}
+                  placeholder="Ex: Meu pet é tímido com estranhos, avisar ao chegar..."
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  style={{ resize: 'vertical' }}
+                />
               </div>
             </div>
           </div>
 
-          {/* Data e Horário */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', color: 'var(--accent)' }}>📅 Data e Horário</h3>
             <div style={{ marginBottom: '0.75rem' }}>
               <label className="label">Data *</label>
-              <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} required min={new Date().toISOString().split('T')[0]} />
+              <input
+                className="input"
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                required
+                min={new Date().toISOString().split('T')[0]}
+              />
             </div>
             <div>
               <label className="label">Horário *</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                {TIMES.map(t => (
-                  <button key={t} type="button" onClick={() => setTime(t)}
-                    style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', border: '1.5px solid', borderColor: time === t ? 'var(--accent)' : 'var(--border)', background: time === t ? 'var(--accent)' : 'white', color: time === t ? 'white' : 'var(--text)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>
-                    {t}
-                  </button>
-                ))}
+                {TIMES.map(t => {
+                  const isBooked = bookedTimes.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => !isBooked && setTime(t)}
+                      title={isBooked ? 'Horário indisponível' : ''}
+                      style={{ padding: '0.45rem 0.9rem', borderRadius: '8px', border: '1.5px solid', borderColor: isBooked ? '#ddd' : time === t ? 'var(--accent)' : 'var(--border)', background: isBooked ? '#f5f5f5' : time === t ? 'var(--accent)' : 'white', color: isBooked ? '#bbb' : time === t ? 'white' : 'var(--text)', fontSize: '0.85rem', fontWeight: 600, cursor: isBooked ? 'not-allowed' : 'pointer', transition: 'all 0.15s', textDecoration: isBooked ? 'line-through' : 'none' }}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Local */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', color: 'var(--accent)' }}>📍 Local do Atendimento</h3>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               {[{ v: 'em_casa', l: '🏠 Em casa' }, { v: 'na_clinica', l: '🏥 Na clínica' }].map(o => (
-                <button key={o.v} type="button" onClick={() => setLocation(o.v)}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', border: '1.5px solid', borderColor: location === o.v ? 'var(--accent)' : 'var(--border)', background: location === o.v ? '#f0f9f6' : 'white', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.15s' }}>
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setLocation(o.v)}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', border: '1.5px solid', borderColor: location === o.v ? 'var(--accent)' : 'var(--border)', background: location === o.v ? '#f0f9f6' : 'white', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.15s' }}
+                >
                   {o.l}
                 </button>
               ))}
